@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>Macro Tracker PWA</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <h1>Macro Tracker</h1>
+        <button id="installHintBtn" class="secondary">Install</button>
+      </header>
+
+      <nav class="tabbar" aria-label="Primary">
+        <button data-route="persons" class="tab active">Persons</button>
+        <button data-route="dashboard" class="tab">Dashboard</button>
+        <button data-route="add" class="tab">Add Entry</button>
+        <button data-route="scan" class="tab">Scan</button>
+        <button data-route="photo" class="tab">Photo</button>
+        <button data-route="settings" class="tab">Settings</button>
+      </nav>
+
+      <main id="appMain">
+        <section id="screen-persons" class="screen active" aria-labelledby="personsTitle">
+          <h2 id="personsTitle">Persons</h2>
+          <p class="muted">Today overview per person</p>
+          <div id="personsList" class="cards"></div>
+        </section>
+
+        <section id="screen-dashboard" class="screen" aria-labelledby="dashboardTitle">
+          <h2 id="dashboardTitle">Daily Dashboard</h2>
+          <div class="inline-controls">
+            <label>
+              Person
+              <select id="personPicker"></select>
+            </label>
+            <label>
+              Date
+              <input id="datePicker" type="date" />
+            </label>
+          </div>
+          <div id="dashboardSummary" class="summary"></div>
+          <div id="entriesTableContainer"></div>
+        </section>
+
+        <section id="screen-add" class="screen" aria-labelledby="addTitle">
+          <h2 id="addTitle">Manual Add</h2>
+          <div class="card add-card">
+            <div class="inline-controls">
+              <label>
+                Person
+                <select id="addPersonPicker"></select>
+              </label>
+              <label>
+                Time
+                <input id="addTime" type="time" />
+              </label>
+            </div>
+
+            <section>
+              <h3>Favorites</h3>
+              <div id="favoriteList" class="suggestions"></div>
+            </section>
+
+            <section>
+              <h3>Recent items</h3>
+              <div id="recentList" class="suggestions"></div>
+            </section>
+
+            <label>
+              Search foods
+              <input id="foodSearchInput" type="search" placeholder="Search favorites, recent, and built-in foods" />
+            </label>
+
+            <section>
+              <h3>Search results</h3>
+              <div id="addSuggestions" class="suggestions"></div>
+            </section>
+
+            <h3>Quick custom add</h3>
+            <form id="customFoodForm" class="form-grid">
+              <label>Name <input id="customName" type="text" placeholder="e.g. Homemade sandwich" required /></label>
+              <div class="inline-controls">
+                <label>kcal/100g <input id="customKcal" type="number" step="0.1" min="0" required /></label>
+                <label>P/100g <input id="customP" type="number" step="0.1" min="0" required /></label>
+                <label>C/100g <input id="customC" type="number" step="0.1" min="0" required /></label>
+                <label>F/100g <input id="customF" type="number" step="0.1" min="0" required /></label>
+              </div>
+              <label>
+                Source label
+                <select id="customSource">
+                  <option value="custom">Manual (Custom)</option>
+                  <option value="photo-manual">Photo (manual via ChatGPT)</option>
+                </select>
+              </label>
+              <button type="submit">Use custom nutrition</button>
+            </form>
+
+            <p id="addStatus" class="muted"></p>
+          </div>
+        </section>
+
+
+        <section id="screen-scan" class="screen" aria-labelledby="scanTitle">
+          <h2 id="scanTitle">Scan Barcode</h2>
+          <div class="card form-grid">
+            <video id="scannerVideo" class="scanner-video" playsinline muted></video>
+            <div class="row-actions">
+              <button type="button" id="startScanBtn">Start camera scan</button>
+              <button type="button" id="stopScanBtn" class="secondary">Stop scan</button>
+            </div>
+            <p id="scanStatus" class="muted">Point the camera at an EAN/UPC barcode.</p>
+            <div id="scanResult" class="stack"></div>
+          </div>
+        </section>
+
+
+        <section id="screen-photo" class="screen" aria-labelledby="photoTitle">
+          <h2 id="photoTitle">Photo Workflow (manual)</h2>
+          <div class="card form-grid">
+            <label>
+              Take or choose meal photo
+              <input id="photoInput" type="file" accept="image/*" capture="environment" />
+            </label>
+            <img id="photoPreview" class="photo-preview" alt="Meal preview" hidden />
+
+            <button type="button" id="copyPromptBtn">Copy ChatGPT Prompt</button>
+
+            <div class="card">
+              <h3>Instructions</h3>
+              <ol>
+                <li>Open ChatGPT app</li>
+                <li>Upload photo</li>
+                <li>Paste prompt</li>
+                <li>Return and log manually</li>
+              </ol>
+            </div>
+
+            <p id="photoStatus" class="muted"></p>
+          </div>
+        </section>
+
+        <section id="screen-settings" class="screen" aria-labelledby="settingsTitle">
+          <h2 id="settingsTitle">Settings · Persons</h2>
+
+          <form id="personForm" class="card form-grid">
+            <input id="personId" type="hidden" />
+            <label>
+              Name
+              <input id="personName" type="text" required maxlength="60" placeholder="e.g. Alex" />
+            </label>
+            <label>
+              Daily kcal goal
+              <input id="personKcalGoal" type="number" inputmode="numeric" min="800" max="12000" step="1" required />
+            </label>
+            <fieldset class="macro-fieldset">
+              <legend>Optional macro targets (g/day)</legend>
+              <div class="inline-controls">
+                <label>P <input id="personMacroP" type="number" min="0" max="1000" step="1" /></label>
+                <label>C <input id="personMacroC" type="number" min="0" max="1500" step="1" /></label>
+                <label>F <input id="personMacroF" type="number" min="0" max="600" step="1" /></label>
+              </div>
+            </fieldset>
+            <div class="row-actions">
+              <button type="submit" id="savePersonBtn">Save Person</button>
+              <button type="button" id="cancelEditBtn" class="secondary" hidden>Cancel edit</button>
+            </div>
+          </form>
+
+          <div id="settingsPersons" class="stack"></div>
+
+          <section class="card form-grid" aria-labelledby="dataToolsTitle">
+            <h3 id="dataToolsTitle">Data management</h3>
+            <div class="row-actions">
+              <button type="button" id="exportDataBtn" class="secondary">Export all data</button>
+              <label class="file-input-label" for="importDataInput">Import JSON</label>
+              <input id="importDataInput" type="file" accept="application/json" hidden />
+              <button type="button" id="deleteAllDataBtn" class="danger">Delete all data</button>
+            </div>
+            <p id="settingsDataStatus" class="muted"></p>
+          </section>
+
+          <button id="seedBtn" class="secondary">Reset Sample Data</button>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="portionDialog">
+      <h3 id="portionFoodName"></h3>
+      <p id="portionMeta" class="muted"></p>
+      <div id="portionPresetButtons" class="inline-controls"></div>
+      <label>
+        Amount (grams)
+        <input id="portionGrams" type="number" min="1" step="1" value="100" />
+      </label>
+      <div class="row-actions">
+        <button id="confirmPortionBtn">Log Entry</button>
+        <button id="cancelPortionBtn" class="secondary">Cancel</button>
+      </div>
+    </dialog>
+
+    <dialog id="installDialog">
+      <p>Add to Home Screen in Safari: Share → Add to Home Screen.</p>
+      <button id="closeInstallDialog">Close</button>
+    </dialog>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
