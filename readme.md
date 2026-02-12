@@ -67,5 +67,58 @@ Then open `http://localhost:8080`.
 Run helper unit tests:
 
 ```bash
-node --test tests/math.test.js
+node --test math.test.js
 ```
+
+## Playwright smoke checks
+
+For Linux/CI runners:
+
+```bash
+npx playwright install --with-deps
+```
+
+Run offline smoke validation (WebKit authoritative + Chromium best-effort fallback):
+
+```bash
+node playwright/smoke-offline.mjs
+```
+
+
+## Local smoke validation
+
+```bash
+npm install
+npm run playwright:install
+npm run smoke:offline
+```
+
+Linux CI/container runners can use:
+
+```bash
+npm run playwright:install:deps
+```
+
+Notes:
+- WebKit is authoritative for iPhone/Safari behavior.
+- Chromium smoke uses hardened launch flags for container stability.
+
+
+## Restricted environments (CDN 403)
+
+In some locked-down CI/container environments, Playwright browser downloads can be blocked (for example `403 Domain forbidden`).
+
+In that case:
+- `npm run playwright:install` prints guidance and soft-fails for recognized blocked-download errors.
+- `npm run smoke:offline` auto-skips only when browser binaries are missing.
+- Other app checks/tests continue to run normally.
+
+To run smoke tests on a local machine with download access:
+
+```bash
+npm install
+npx playwright install
+npm run smoke:offline
+```
+
+WebKit remains the primary/authoritative target for iPhone Safari behavior.
