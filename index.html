@@ -4,9 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Macro Tracker PWA</title>
     <link rel="manifest" href="manifest.json" />
-    <link rel="apple-touch-icon" href="icons/icon.svg" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.svg" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -16,12 +19,19 @@
         <button id="installHintBtn" class="secondary">Install</button>
       </header>
 
+      <div id="iosInstallBanner" class="ios-install-banner" hidden>
+        <span>Add to Home Screen for best experience</span>
+        <button type="button" id="dismissIosInstallBanner" class="secondary" aria-label="Dismiss install tip">Dismiss</button>
+      </div>
+
       <nav class="tabbar" aria-label="Primary">
         <button data-route="persons" class="tab active">Persons</button>
         <button data-route="dashboard" class="tab">Dashboard</button>
         <button data-route="add" class="tab">Add Entry</button>
         <button data-route="scan" class="tab">Scan</button>
         <button data-route="photo" class="tab">Photo</button>
+        <button data-route="analytics" class="tab">Analytics</button>
+        <button data-route="nutrition" class="tab">Nutrition</button>
         <button data-route="settings" class="tab">Settings</button>
       </nav>
 
@@ -76,6 +86,20 @@
               Search foods
               <input id="foodSearchInput" type="search" placeholder="Search favorites, recent, and built-in foods" />
             </label>
+
+
+            <section>
+              <h3>Generic categories</h3>
+              <div id="genericCategoryFilters" class="category-filters" role="group" aria-label="Generic food categories">
+                <button type="button" class="secondary active" data-category="All">All</button>
+                <button type="button" class="secondary" data-category="Fruits">Fruits</button>
+                <button type="button" class="secondary" data-category="Vegetables">Vegetables</button>
+                <button type="button" class="secondary" data-category="Meat">Meat</button>
+                <button type="button" class="secondary" data-category="Dairy">Dairy</button>
+                <button type="button" class="secondary" data-category="Grains">Grains</button>
+                <button type="button" class="secondary" data-category="Drinks">Drinks</button>
+              </div>
+            </section>
 
             <section>
               <h3>Search results</h3>
@@ -143,6 +167,64 @@
 
             <p id="photoStatus" class="muted"></p>
           </div>
+        </section>
+
+        <section id="screen-analytics" class="screen" aria-labelledby="analyticsTitle">
+          <h2 id="analyticsTitle">Analytics</h2>
+          <div class="card form-grid">
+            <div class="inline-controls">
+              <label>
+                Person
+                <select id="analyticsPersonPicker"></select>
+              </label>
+              <label>
+                Date
+                <input id="analyticsWeightDate" type="date" />
+              </label>
+              <label>
+                Scale weight (kg)
+                <input id="analyticsWeightInput" type="number" min="1" max="500" step="0.1" placeholder="e.g. 72.4" />
+              </label>
+            </div>
+            <div class="row-actions">
+              <button type="button" id="saveWeightLogBtn">Save weight</button>
+            </div>
+            <p id="analyticsStatus" class="muted"></p>
+          </div>
+
+          <div id="analyticsInsights" class="cards"></div>
+
+          <div class="card form-grid">
+            <div class="row-actions" id="analyticsRangeToggle" role="group" aria-label="Analytics range">
+              <button type="button" class="secondary active" data-range="1W">1W</button>
+              <button type="button" class="secondary" data-range="1M">1M</button>
+              <button type="button" class="secondary" data-range="3M">3M</button>
+              <button type="button" class="secondary" data-range="ALL">All</button>
+            </div>
+            <canvas id="analyticsChart" class="analytics-chart" aria-label="Weekly analytics chart"></canvas>
+          </div>
+
+          <div class="card">
+            <h3>Last 7 entries</h3>
+            <div id="weightLogList"></div>
+          </div>
+        </section>
+
+        <section id="screen-nutrition" class="screen" aria-labelledby="nutritionTitle">
+          <h2 id="nutritionTitle">Nutrition Overview</h2>
+          <div class="card form-grid">
+            <div class="inline-controls">
+              <label>
+                Person
+                <select id="nutritionPersonPicker"></select>
+              </label>
+              <label>
+                Date
+                <input id="nutritionDatePicker" type="date" />
+              </label>
+            </div>
+          </div>
+          <div id="nutritionOverviewList" class="stack"></div>
         </section>
 
         <section id="screen-settings" class="screen" aria-labelledby="settingsTitle">

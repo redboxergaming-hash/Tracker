@@ -1,0 +1,15 @@
+{
+  "name": "tracker-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test math.test.js",
+    "smoke:offline": "node playwright/smoke-offline.mjs",
+    "playwright:install": "node scripts/playwright-install.mjs",
+    "playwright:install:deps": "node scripts/playwright-install.mjs --with-deps chromium webkit"
+  },
+  "devDependencies": {
+    "playwright": "^1.55.0"
+  }
+}
