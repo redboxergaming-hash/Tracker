@@ -1,3 +1,4 @@
+import './ui-smoke.mjs';
 import { playwrightPreflight } from './preflight.mjs';
 import { chromiumLaunchOptions, WEBKIT_IOS_DEVICE } from './config.mjs';
 

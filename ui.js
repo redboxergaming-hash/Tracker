@@ -276,6 +276,17 @@ export function readPersonForm() {
   };
 }
 
+function foodVisual(item) {
+  if (item?.imageUrl) {
+    return `<img class="food-thumb" src="${item.imageUrl}" alt="" loading="lazy" decoding="async" />`;
+  }
+  if (item?.icon) return `<span class="food-emoji" aria-hidden="true">${item.icon}</span>`;
+  if (item?.isGeneric) return '<span class="food-emoji" aria-hidden="true">🍽️</span>';
+  if (item?.sourceType === 'barcode') return '<span class="food-emoji" aria-hidden="true">📦</span>';
+  if (item?.sourceType === 'favorite') return '<span class="food-emoji" aria-hidden="true">⭐</span>';
+  return '<span class="food-emoji" aria-hidden="true">🥗</span>';
+}
+
 function renderFoodList(containerId, items, favoritesSet, emptyText) {
   const wrap = el(containerId);
   if (!items.length) {
@@ -286,26 +297,54 @@ function renderFoodList(containerId, items, favoritesSet, emptyText) {
   wrap.innerHTML = items
     .map((item) => {
       const star = favoritesSet.has(item.foodId) ? '★' : '☆';
-      return `<button class="suggestion" data-action="pick-food" data-food-id="${item.foodId}">
-        <div>
+      return `<article class="suggestion">
+        <div class="food-main">
+          ${foodVisual(item)}
+          <div>
           <strong>${item.label}</strong>
           <div class="muted tiny">${item.groupLabel}</div>
+          <div class="food-macros tiny">
+            <span class="macro-kcal">${Math.round(item.nutrition?.kcal100g ?? 0)} kcal</span>
+            <span class="macro-pill protein">P ${Math.round((item.nutrition?.p100g ?? 0) * 10) / 10}</span>
+            <span class="macro-pill carbs">C ${Math.round((item.nutrition?.c100g ?? 0) * 10) / 10}</span>
+            <span class="macro-pill fat">F ${Math.round((item.nutrition?.f100g ?? 0) * 10) / 10}</span>
+          </div>
           ${item.isGeneric ? '<div class="muted tiny">Generic built-in (approx.)</div>' : ''}
+          </div>
         </div>
         <div class="suggestion-actions">
+          <button type="button" class="quick-log-btn" data-action="quick-log" data-food-id="${item.foodId}" aria-label="Quick log ${item.label}">+</button>
+          <button type="button" class="secondary" data-action="pick-food" data-food-id="${item.foodId}" aria-label="Open portion picker for ${item.label}">Portion</button>
           <span class="star" data-action="toggle-favorite" data-food-id="${item.foodId}" role="button" aria-label="Toggle favorite">${star}</span>
         </div>
-      </button>`;
+      </article>`;
     })
     .join('');
 }
 
+function renderQuickCarousel(containerId, items, emptyText) {
+  const wrap = el(containerId);
+  if (!items.length) {
+    wrap.innerHTML = `<p class="muted">${emptyText}</p>`;
+    return;
+  }
+
+  wrap.innerHTML = items
+    .map(
+      (item) => `<button class="quick-card" data-action="quick-log" data-food-id="${item.foodId}" aria-label="Quick log ${item.label}">
+      ${foodVisual(item)}
+      <span>${item.label}</span>
+    </button>`
+    )
+    .join('');
+}
+
 export function renderFavoriteSection(items, favoritesSet) {
-  renderFoodList('favoriteList', items, favoritesSet, 'No favorites yet.');
+  renderQuickCarousel('favoriteList', items, 'No favorites yet.');
 }
 
 export function renderRecentSection(items, favoritesSet) {
-  renderFoodList('recentList', items, favoritesSet, 'No recent items yet.');
+  renderQuickCarousel('recentList', items, 'No recent items yet.');
 }
 
 export function renderSuggestions(items, favoritesSet) {
@@ -341,6 +380,21 @@ export function closePortionDialog() {
 
 export function showAddStatus(message) {
   el('addStatus').textContent = message;
+}
+
+export function setAddMode(mode) {
+  document.querySelectorAll('#addModeTabs button[data-add-mode]').forEach((btn) => {
+    const active = btn.dataset.addMode === mode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', String(active));
+  });
+
+  el('addSearchSection').hidden = mode !== 'search';
+  el('addSearchInputWrap').hidden = mode !== 'search';
+  el('addSuggestions').parentElement.hidden = mode !== 'search';
+  el('addQuickFavorites').hidden = !['search', 'favorites'].includes(mode);
+  el('addQuickFormSection').hidden = mode !== 'quick';
+  el('addScanShortcut').hidden = mode !== 'scan';
 }
 
 

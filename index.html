@@ -72,22 +72,42 @@
               </label>
             </div>
 
-            <section>
+            <div class="add-mode-tabs" id="addModeTabs" role="tablist" aria-label="Add entry mode">
+              <button type="button" class="secondary active" role="tab" aria-selected="true" data-add-mode="search">🔎 Search</button>
+              <button type="button" class="secondary" role="tab" aria-selected="false" data-add-mode="scan">📷 Scan</button>
+              <button type="button" class="secondary" role="tab" aria-selected="false" data-add-mode="quick">⚡ Quick Add</button>
+              <button type="button" class="secondary" role="tab" aria-selected="false" data-add-mode="favorites">⭐ Favorites</button>
+            </div>
+
+            <section id="addQuickFavorites" class="quick-carousel-wrap">
               <h3>Favorites</h3>
-              <div id="favoriteList" class="suggestions"></div>
-            </section>
-
-            <section>
+              <div id="favoriteList" class="quick-carousel"></div>
               <h3>Recent items</h3>
-              <div id="recentList" class="suggestions"></div>
+              <div id="recentList" class="quick-carousel"></div>
             </section>
 
-            <label>
+            <section id="addScanShortcut" class="card" hidden>
+              <h3>Scan barcode</h3>
+              <p class="muted">Use the barcode scanner for products with packaging labels.</p>
+              <button type="button" id="goToScanModeBtn">Open Scan tab</button>
+            </section>
+
+            <label id="addSearchInputWrap">
               Search foods
               <input id="foodSearchInput" type="search" placeholder="Search favorites, recent, and built-in foods" />
             </label>
 
 
+            <section id="addSearchSection">
+              <h3>Generic categories</h3>
+              <div id="genericCategoryFilters" class="category-filters" role="group" aria-label="Generic food categories">
+                <button type="button" class="secondary active" data-category="All">🍽️ All</button>
+                <button type="button" class="secondary" data-category="Fruits">🍎 Fruits</button>
+                <button type="button" class="secondary" data-category="Vegetables">🥦 Vegetables</button>
+                <button type="button" class="secondary" data-category="Meat">🍗 Meat</button>
+                <button type="button" class="secondary" data-category="Dairy">🥛 Dairy</button>
+                <button type="button" class="secondary" data-category="Grains">🌾 Grains</button>
+                <button type="button" class="secondary" data-category="Drinks">🥤 Drinks</button>
             <section>
               <h3>Generic categories</h3>
               <div id="genericCategoryFilters" class="category-filters" role="group" aria-label="Generic food categories">
@@ -106,8 +126,9 @@
               <div id="addSuggestions" class="suggestions"></div>
             </section>
 
-            <h3>Quick custom add</h3>
-            <form id="customFoodForm" class="form-grid">
+            <section id="addQuickFormSection">
+              <h3>Quick custom add</h3>
+              <form id="customFoodForm" class="form-grid">
               <label>Name <input id="customName" type="text" placeholder="e.g. Homemade sandwich" required /></label>
               <div class="inline-controls">
                 <label>kcal/100g <input id="customKcal" type="number" step="0.1" min="0" required /></label>
@@ -123,7 +144,8 @@
                 </select>
               </label>
               <button type="submit">Use custom nutrition</button>
-            </form>
+              </form>
+            </section>
 
             <p id="addStatus" class="muted"></p>
           </div>

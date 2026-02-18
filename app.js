@@ -53,6 +53,8 @@ import {
   renderAnalyticsInsights,
   renderNutritionPersonPicker,
   setNutritionDefaultDate,
+  renderNutritionOverview,
+  setAddMode
   renderNutritionOverview
 } from './ui.js';
 
@@ -157,6 +159,8 @@ const state = {
   analyticsRange: '1W',
   analyticsPoints: [],
   selectedGenericCategory: 'All',
+  dashboardMacroView: 'consumed',
+  addMode: 'search'
   dashboardMacroView: 'consumed'
 };
 
@@ -170,6 +174,16 @@ function foodFromGeneric(item) {
     isGeneric: true,
     groupLabel: `Built-in generic • ${item.category || 'Uncategorized'}`
   };
+}
+
+function foodEmojiForCategory(category) {
+  if (category === 'Fruits') return '🍎';
+  if (category === 'Vegetables') return '🥦';
+  if (category === 'Meat') return '🍗';
+  if (category === 'Dairy') return '🥛';
+  if (category === 'Grains') return '🌾';
+  if (category === 'Drinks') return '🥤';
+  return '🍽️';
 }
 
 
@@ -338,7 +352,23 @@ function buildSuggestionPool(personId, selectedCategory = "All") {
   [...favorites, ...recents, ...generic].forEach((item) => {
     if (!dedup.has(item.foodId)) dedup.set(item.foodId, item);
   });
-  return [...dedup.values()];
+  return [...dedup.values()].map((item) => {
+    const genericMatch = genericFoods.find((g) => g.id === item.foodId);
+    const category = genericMatch?.category;
+    return {
+      ...item,
+      icon: item.icon || foodEmojiForCategory(category),
+      imageUrl: item.imageUrl || null
+    };
+  });
+}
+
+function debounce(fn, waitMs = 50) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), waitMs);
+  };
 }
 
 function filterSuggestions(query, personId) {
@@ -558,6 +588,37 @@ async function logActiveFood() {
   await loadAndRender();
 }
 
+async function logFoodQuick(item, personId) {
+  const grams = item.pieceGramHint || 100;
+  const macros = computeNutritionFromPer100g(item.nutrition, grams);
+  const micronutrients = scaleMicronutrientsFromPer100g(item.nutrition, grams);
+  const time = document.getElementById('addTime').value || nowTime();
+
+  await addEntry({
+    personId,
+    date: state.selectedDate,
+    time,
+    foodId: item.foodId,
+    foodName: item.label,
+    amountGrams: grams,
+    ...macros,
+    ...micronutrients,
+    source: item.groupLabel || 'Manual (Quick add)',
+    lastPortionKey: `${personId}:${item.foodId}`,
+    recentItem: {
+      foodId: item.foodId,
+      label: item.label,
+      nutrition: item.nutrition,
+      pieceGramHint: item.pieceGramHint,
+      sourceType: item.sourceType === 'favorite' ? 'generic' : item.sourceType,
+      imageUrl: item.imageUrl || null
+    }
+  });
+
+  showAddStatus(`Quick logged ${item.label} (${grams}g).`);
+  await loadAndRender();
+}
+
 async function handleAddSuggestionClick(e) {
   const actionTarget = e.target.closest('[data-action]');
   if (!actionTarget) return;
@@ -588,6 +649,11 @@ async function handleAddSuggestionClick(e) {
     const favorited = await isFavorite(personId, item.foodId);
     const sourceType = favorited ? 'favorite' : item.sourceType;
     await openPortionForItem({ ...item, sourceType });
+    return;
+  }
+
+  if (action === 'quick-log') {
+    await logFoodQuick(item, personId);
   }
 }
 
@@ -856,7 +922,32 @@ function wireEvents() {
   document.getElementById('foodSearchInput').addEventListener('input', (e) => {
     const personId = document.getElementById('addPersonPicker').value || state.selectedPersonId;
     if (!personId) return;
-    filterSuggestions(e.target.value, personId);
+    filterSuggestions(document.getElementById('foodSearchInput').value || '', personId);
+    document.querySelectorAll('#genericCategoryFilters button[data-category]').forEach((b) => {
+      b.classList.toggle('active', b === btn);
+    });
+  });
+
+  const debouncedSearch = debounce((query) => {
+    const personId = document.getElementById('addPersonPicker').value || state.selectedPersonId;
+    if (!personId) return;
+    filterSuggestions(query, personId);
+  }, 40);
+
+  document.getElementById('foodSearchInput').addEventListener('input', (e) => {
+    debouncedSearch(e.target.value || '');
+  });
+
+  document.getElementById('addModeTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-add-mode]');
+    if (!btn) return;
+    state.addMode = btn.dataset.addMode || 'search';
+    setAddMode(state.addMode);
+  });
+
+  document.getElementById('goToScanModeBtn').addEventListener('click', () => {
+    const tab = document.querySelector('.tab[data-route="scan"]');
+    if (tab) tab.click();
   });
 
   document.getElementById('addSuggestions').addEventListener('click', handleAddSuggestionClick);
@@ -973,5 +1064,6 @@ await registerServiceWorker();
 wireEvents();
 fillPersonForm(null);
 renderIosInstallBanner();
+setAddMode(state.addMode);
 await ensureSeedDataIfNeeded();
 await loadAndRender();

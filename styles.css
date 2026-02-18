@@ -206,6 +206,28 @@ button.secondary {
   color: var(--text);
 }
 
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+button {
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--color-primary-500), var(--color-primary-600));
+  border-color: var(--color-primary-700);
+  color: #f8fafc;
+}
+
+button.secondary {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text);
+}
+
 button.danger {
   background: var(--danger-bg);
   border-color: var(--danger-border);
@@ -238,12 +260,89 @@ progress { width: 100%; height: 10px; accent-color: var(--accent); }
 
 .add-card { display: grid; gap: 8px; }
 .suggestions { display: grid; gap: 8px; }
+.add-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.add-mode-tabs button { min-height: 44px; font-size: 0.85rem; }
+.add-mode-tabs button.active { background: var(--color-blue-100); border-color: var(--color-blue-600); color: var(--color-blue-700); }
+
+.quick-carousel-wrap { display: grid; gap: 8px; }
+.quick-carousel {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.quick-card {
+  min-width: 140px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  min-height: 64px;
+}
+.quick-card:active { transform: translateY(1px); }
+
 .suggestion {
   display: flex;
   width: 100%;
   justify-content: space-between;
-  align-items: start;
+  align-items: center;
   text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  padding: 10px;
+}
+.suggestion:hover,
+.suggestion:focus-visible {
+  border-color: var(--color-blue-400);
+  box-shadow: var(--shadow-1);
+}
+.food-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.food-thumb,
+.food-emoji {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.food-macros {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.macro-kcal {
+  background: var(--color-blue-100);
+  color: var(--color-blue-700);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.macro-pill { border-radius: 999px; padding: 2px 8px; }
+.macro-pill.protein { background: #dcfce7; color: #14532d; }
+.macro-pill.carbs { background: #ffedd5; color: #9a3412; }
+.macro-pill.fat { background: #fef9c3; color: #854d0e; }
+
+.quick-log-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  font-size: 1.2rem;
+  line-height: 1;
 }
 .suggestion-actions { display: flex; align-items: center; }
 .star { font-size: 1.2rem; color: var(--color-accent-yellow); padding: 2px 8px; }
@@ -308,6 +407,7 @@ progress { width: 100%; height: 10px; accent-color: var(--accent); }
 .nutrition-row-head { display: flex; justify-content: space-between; gap: 8px; }
 
 .category-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.category-filters button { min-height: 44px; }
 
 .ios-install-banner {
   position: sticky;

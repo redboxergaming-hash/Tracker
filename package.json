@@ -5,6 +5,12 @@
   "type": "module",
   "scripts": {
     "test": "node --test math.test.js",
+    "smoke:offline": "npm run ui:smoke",
+    "playwright:install": "playwright install chromium webkit",
+    "playwright:install:deps": "node scripts/playwright-install.mjs --with-deps chromium webkit",
+    "ui:smoke": "node playwright/ui-smoke.mjs",
+    "postinstall": "playwright install --with-deps || echo 'Playwright browser install skipped'",
+    "ui:smoke:strict": "PLAYWRIGHT_STRICT=1 node playwright/ui-smoke.mjs"
     "smoke:offline": "node playwright/smoke-offline.mjs",
     "playwright:install": "node scripts/playwright-install.mjs",
     "playwright:install:deps": "node scripts/playwright-install.mjs --with-deps chromium webkit"
