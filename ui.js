@@ -69,6 +69,48 @@ export function renderPersonsList(persons, todayStatsByPerson = {}) {
     .join('');
 }
 
+
+export function renderNutritionPersonPicker(persons, selectedId) {
+  const html = persons.length
+    ? persons.map((p) => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${p.name}</option>`).join('')
+    : '<option value="">No persons</option>';
+  el('nutritionPersonPicker').innerHTML = html;
+}
+
+export function setNutritionDefaultDate(date) {
+  el('nutritionDatePicker').value = date;
+}
+
+function formatMicroAmount(value, unit) {
+  if (!Number.isFinite(value)) return '—';
+  return `${Math.round(value * 100) / 100}${unit}`;
+}
+
+export function renderNutritionOverview(rows, hasAnyData) {
+  const wrap = el('nutritionOverviewList');
+  if (!hasAnyData) {
+    wrap.innerHTML = '<p class="muted">No micronutrient data available</p>';
+    return;
+  }
+
+  wrap.innerHTML = rows
+    .map((row) => {
+      const progressValue = row.target && row.amount !== null ? Math.min(1, row.amount / row.target) : 0;
+      const targetText = row.target ? `${Math.round(row.target * 100) / 100}${row.unit}` : '—';
+      const percentText = row.target && row.percent !== null ? `${row.percent}%` : '—';
+
+      return `<article class="nutrition-row">
+        <div class="nutrition-row-head">
+          <strong>${row.label}</strong>
+          <span>${formatMicroAmount(row.amount, row.unit)}</span>
+        </div>
+        <progress max="1" value="${progressValue}"></progress>
+        <div class="muted tiny">Target: ${targetText} • ${percentText}</div>
+      </article>`;
+    })
+    .join('');
+}
+
 export function renderPersonPicker(persons, selectedId) {
   const html = persons.length
     ? persons
@@ -79,17 +121,84 @@ export function renderPersonPicker(persons, selectedId) {
   el('addPersonPicker').innerHTML = html;
 }
 
-export function renderDashboard(person, date, entries) {
-  const totals = sumEntries(entries);
-  const remaining = person.kcalGoal - totals.kcal;
-  el('dashboardSummary').innerHTML = `
-    <p><strong>Remaining kcal:</strong> ${Math.round(remaining)}</p>
-    <p>Consumed: ${Math.round(totals.kcal)} / Goal: ${person.kcalGoal}</p>
-    <div class="stat-rows">
-      ${macroProgress('P', totals.p, person.macroTargets?.p)}
-      ${macroProgress('C', totals.c, person.macroTargets?.c)}
-      ${macroProgress('F', totals.f, person.macroTargets?.f)}
+function renderMacroCard({ label, consumed, goal, kcalFactor, view, toneClass, personKcalGoal }) {
+  const safeGoal = Number.isFinite(goal) && goal > 0 ? goal : null;
+  const remaining = safeGoal != null ? Math.max(0, safeGoal - consumed) : null;
+  const consumedPct = safeGoal ? Math.min(100, Math.round((consumed / safeGoal) * 100)) : 0;
+  const metTarget = safeGoal ? consumed >= safeGoal : false;
+
+  let valueText = `${Math.round(consumed)}g consumed`;
+  if (view === 'remaining') valueText = remaining == null ? '— remaining' : `${Math.round(remaining)}g remaining`;
+  if (view === 'percent') {
+    const consumedKcal = consumed * kcalFactor;
+    valueText = safeGoal ? `${Math.round((consumedKcal / (personKcalGoal || 1)) * 100)}% of kcal` : `${Math.round(consumedKcal)} kcal`;
+  }
+
+  return `<article class="macro-card ${toneClass} ${metTarget ? 'goal-met' : ''}">
+    <div class="macro-card-head">
+      <strong>${label}</strong>
+      <span>${safeGoal ? `${Math.round(consumed)}g / ${Math.round(safeGoal)}g` : `${Math.round(consumed)}g`}</span>
     </div>
+    <div class="macro-card-value">${valueText}</div>
+    <div class="macro-track"><div class="macro-fill" style="width:${consumedPct}%"></div></div>
+  </article>`;
+}
+
+export function renderDashboard(person, date, entries, options = {}) {
+  const totals = sumEntries(entries);
+  const consumedKcal = Math.round(totals.kcal);
+  const remainingKcal = Math.max(0, Math.round(person.kcalGoal - totals.kcal));
+  const kcalProgress = person.kcalGoal > 0 ? Math.min(100, Math.round((totals.kcal / person.kcalGoal) * 100)) : 0;
+  const macroView = options.macroView || 'consumed';
+  const streakDays = Number.isFinite(options.streakDays) ? options.streakDays : 0;
+
+  el('dashboardSummary').innerHTML = `
+    <section class="dashboard-hero">
+      <article class="hero-card hero-calories">
+        <h3>Calories consumed</h3>
+        <p class="hero-value">${consumedKcal}</p>
+        <p class="muted tiny">Goal ${person.kcalGoal} kcal</p>
+        <div class="macro-track"><div class="macro-fill" style="width:${kcalProgress}%"></div></div>
+      </article>
+      <article class="hero-card hero-remaining ${remainingKcal <= 0 ? 'goal-met' : ''}">
+        <h3>Calories remaining</h3>
+        <p class="hero-value">${remainingKcal}</p>
+        <p class="muted tiny">${remainingKcal <= 0 ? 'Daily target reached' : 'Keep going'}</p>
+      </article>
+    </section>
+
+    <section class="dashboard-macros">
+      <div class="row-actions macro-view-toggle" role="group" aria-label="Macro display mode">
+        <button type="button" class="secondary ${macroView === 'consumed' ? 'active' : ''}" data-macro-view="consumed">Consumed (g)</button>
+        <button type="button" class="secondary ${macroView === 'remaining' ? 'active' : ''}" data-macro-view="remaining">Remaining (g)</button>
+        <button type="button" class="secondary ${macroView === 'percent' ? 'active' : ''}" data-macro-view="percent">% Calories</button>
+      </div>
+      <div class="macro-grid">
+        ${renderMacroCard({ label: 'Protein', consumed: totals.p, goal: person.macroTargets?.p, kcalFactor: 4, view: macroView, toneClass: 'macro-protein', personKcalGoal: person.kcalGoal })}
+        ${renderMacroCard({ label: 'Carbs', consumed: totals.c, goal: person.macroTargets?.c, kcalFactor: 4, view: macroView, toneClass: 'macro-carbs', personKcalGoal: person.kcalGoal })}
+        ${renderMacroCard({ label: 'Fat', consumed: totals.f, goal: person.macroTargets?.f, kcalFactor: 9, view: macroView, toneClass: 'macro-fat', personKcalGoal: person.kcalGoal })}
+      </div>
+    </section>
+
+    <section class="streak-card">
+      <h3>Logging streak</h3>
+      <p><strong>${streakDays} day${streakDays === 1 ? '' : 's'}</strong> in a row</p>
+      <div class="macro-track"><div class="macro-fill" style="width:${Math.min(100, streakDays * 10)}%"></div></div>
+    </section>
+
+    <section class="habits-card">
+      <h3>Healthy Habits</h3>
+      <div class="habit-grid">
+        <article>
+          <strong>Water</strong>
+          <p class="muted tiny">Placeholder: water tracking coming soon.</p>
+        </article>
+        <article>
+          <strong>Exercise</strong>
+          <p class="muted tiny">Placeholder: exercise tracking coming soon.</p>
+        </article>
+      </div>
+    </section>
     <p class="muted">Date: ${date}</p>
   `;
 
@@ -167,6 +276,17 @@ export function readPersonForm() {
   };
 }
 
+function foodVisual(item) {
+  if (item?.imageUrl) {
+    return `<img class="food-thumb" src="${item.imageUrl}" alt="" loading="lazy" decoding="async" />`;
+  }
+  if (item?.icon) return `<span class="food-emoji" aria-hidden="true">${item.icon}</span>`;
+  if (item?.isGeneric) return '<span class="food-emoji" aria-hidden="true">🍽️</span>';
+  if (item?.sourceType === 'barcode') return '<span class="food-emoji" aria-hidden="true">📦</span>';
+  if (item?.sourceType === 'favorite') return '<span class="food-emoji" aria-hidden="true">⭐</span>';
+  return '<span class="food-emoji" aria-hidden="true">🥗</span>';
+}
+
 function renderFoodList(containerId, items, favoritesSet, emptyText) {
   const wrap = el(containerId);
   if (!items.length) {
@@ -177,26 +297,54 @@ function renderFoodList(containerId, items, favoritesSet, emptyText) {
   wrap.innerHTML = items
     .map((item) => {
       const star = favoritesSet.has(item.foodId) ? '★' : '☆';
-      return `<button class="suggestion" data-action="pick-food" data-food-id="${item.foodId}">
-        <div>
+      return `<article class="suggestion">
+        <div class="food-main">
+          ${foodVisual(item)}
+          <div>
           <strong>${item.label}</strong>
           <div class="muted tiny">${item.groupLabel}</div>
+          <div class="food-macros tiny">
+            <span class="macro-kcal">${Math.round(item.nutrition?.kcal100g ?? 0)} kcal</span>
+            <span class="macro-pill protein">P ${Math.round((item.nutrition?.p100g ?? 0) * 10) / 10}</span>
+            <span class="macro-pill carbs">C ${Math.round((item.nutrition?.c100g ?? 0) * 10) / 10}</span>
+            <span class="macro-pill fat">F ${Math.round((item.nutrition?.f100g ?? 0) * 10) / 10}</span>
+          </div>
           ${item.isGeneric ? '<div class="muted tiny">Generic built-in (approx.)</div>' : ''}
+          </div>
         </div>
         <div class="suggestion-actions">
+          <button type="button" class="quick-log-btn" data-action="quick-log" data-food-id="${item.foodId}" aria-label="Quick log ${item.label}">+</button>
+          <button type="button" class="secondary" data-action="pick-food" data-food-id="${item.foodId}" aria-label="Open portion picker for ${item.label}">Portion</button>
           <span class="star" data-action="toggle-favorite" data-food-id="${item.foodId}" role="button" aria-label="Toggle favorite">${star}</span>
         </div>
-      </button>`;
+      </article>`;
     })
     .join('');
 }
 
+function renderQuickCarousel(containerId, items, emptyText) {
+  const wrap = el(containerId);
+  if (!items.length) {
+    wrap.innerHTML = `<p class="muted">${emptyText}</p>`;
+    return;
+  }
+
+  wrap.innerHTML = items
+    .map(
+      (item) => `<button class="quick-card" data-action="quick-log" data-food-id="${item.foodId}" aria-label="Quick log ${item.label}">
+      ${foodVisual(item)}
+      <span>${item.label}</span>
+    </button>`
+    )
+    .join('');
+}
+
 export function renderFavoriteSection(items, favoritesSet) {
-  renderFoodList('favoriteList', items, favoritesSet, 'No favorites yet.');
+  renderQuickCarousel('favoriteList', items, 'No favorites yet.');
 }
 
 export function renderRecentSection(items, favoritesSet) {
-  renderFoodList('recentList', items, favoritesSet, 'No recent items yet.');
+  renderQuickCarousel('recentList', items, 'No recent items yet.');
 }
 
 export function renderSuggestions(items, favoritesSet) {
@@ -234,9 +382,91 @@ export function showAddStatus(message) {
   el('addStatus').textContent = message;
 }
 
+export function setAddMode(mode) {
+  document.querySelectorAll('#addModeTabs button[data-add-mode]').forEach((btn) => {
+    const active = btn.dataset.addMode === mode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', String(active));
+  });
+
+  el('addSearchSection').hidden = mode !== 'search';
+  el('addSearchInputWrap').hidden = mode !== 'search';
+  el('addSuggestions').parentElement.hidden = mode !== 'search';
+  el('addQuickFavorites').hidden = !['search', 'favorites'].includes(mode);
+  el('addQuickFormSection').hidden = mode !== 'quick';
+  el('addScanShortcut').hidden = mode !== 'scan';
+}
+
 
 export function setScanStatus(message) {
   el('scanStatus').textContent = message;
+}
+
+export function readAnalyticsWeightForm() {
+  return {
+    personId: el('analyticsPersonPicker').value,
+    date: el('analyticsWeightDate').value,
+    scaleWeight: Number(el('analyticsWeightInput').value)
+  };
+}
+
+export function setAnalyticsDefaultDate(date) {
+  el('analyticsWeightDate').value = date;
+}
+
+export function renderAnalyticsPersonPicker(persons, selectedId) {
+  const html = persons.length
+    ? persons.map((p) => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${p.name}</option>`).join('')
+    : '<option value="">No persons</option>';
+  el('analyticsPersonPicker').innerHTML = html;
+}
+
+export function renderWeightLogList(weightLogs) {
+  const wrap = el('weightLogList');
+  if (!weightLogs.length) {
+    wrap.innerHTML = '<p class="muted">No weight logs yet.</p>';
+    return;
+  }
+
+  wrap.innerHTML = `<ul class="weight-log-items">${weightLogs
+    .map((item) => `<li><strong>${item.date}</strong> • ${item.scaleWeight} kg</li>`)
+    .join('')}</ul>`;
+}
+
+export function setAnalyticsStatus(message) {
+  el('analyticsStatus').textContent = message;
+}
+
+function formatChangeMetric(value, unitSuffix = '') {
+  if (!Number.isFinite(value)) return 'Not enough data';
+  const direction = value > 0 ? 'increase' : value < 0 ? 'decrease' : 'no change';
+  const abs = Math.abs(value);
+  const rounded = Math.round(abs * 10) / 10;
+  return `${rounded}${unitSuffix} ${direction}`;
+}
+
+export function renderAnalyticsInsights(metrics) {
+  const wrap = el('analyticsInsights');
+  if (!wrap) return;
+
+  wrap.innerHTML = `
+    <article class="card">
+      <h3>3-day calorie change</h3>
+      <p>${formatChangeMetric(metrics.calorie3d, ' kcal')}</p>
+    </article>
+    <article class="card">
+      <h3>7-day calorie change</h3>
+      <p>${formatChangeMetric(metrics.calorie7d, ' kcal')}</p>
+    </article>
+    <article class="card">
+      <h3>3-day weight change</h3>
+      <p>${formatChangeMetric(metrics.weight3d, ' kg')}</p>
+    </article>
+    <article class="card">
+      <h3>7-day weight change</h3>
+      <p>${formatChangeMetric(metrics.weight7d, ' kg')}</p>
+    </article>
+  `;
 }
 
 function macroValue(value) {

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { clamp, computeNutritionFromPer100g, roundTo, safeNumber } from '../src/math.js';
+import { clamp, computeNutritionFromPer100g, roundTo, safeNumber } from './math.js';
 
 test('safeNumber returns fallback for invalid input', () => {
   assert.equal(safeNumber('abc', 3), 3);

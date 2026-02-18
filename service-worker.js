@@ -1,4 +1,4 @@
-const SW_VERSION = 'v1';
+const SW_VERSION = 'v2';
 const APP_SHELL_CACHE = `app-shell-${SW_VERSION}`;
 const OFF_API_CACHE = `off-api-${SW_VERSION}`;
 
@@ -8,13 +8,14 @@ const APP_SHELL_ASSETS = [
   './styles.css',
   './app.js',
   './manifest.json',
-  './icons/icon.svg',
-  './src/storage.js',
-  './src/ui.js',
-  './src/math.js',
-  './src/genericFoods.js',
-  './src/offClient.js',
-  './src/scanner.js'
+  './icon.svg',
+  './storage.js',
+  './ui.js',
+  './math.js',
+  './genericfoods.js',
+  './offclient.js',
+  './scanner.js',
+  './analyticschart.js'
 ];
 
 self.addEventListener('install', (event) => {

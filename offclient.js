@@ -13,6 +13,10 @@ function pickFirstNumber(obj, keys) {
   return null;
 }
 
+function pickPer100gNumber(obj, key100g) {
+  return parseNumber(obj?.[key100g]);
+}
+
 function normalizePer100g(product, barcode) {
   const nutriments = product?.nutriments || {};
 
@@ -29,7 +33,13 @@ function normalizePer100g(product, barcode) {
       kcal100g: kcalNormalized,
       p100g: pickFirstNumber(nutriments, ['proteins_100g', 'proteins']),
       c100g: pickFirstNumber(nutriments, ['carbohydrates_100g', 'carbohydrates']),
-      f100g: pickFirstNumber(nutriments, ['fat_100g', 'fat'])
+      f100g: pickFirstNumber(nutriments, ['fat_100g', 'fat']),
+      saturatedFat100g: pickPer100gNumber(nutriments, 'saturated-fat_100g'),
+      monounsaturatedFat100g: pickPer100gNumber(nutriments, 'monounsaturated-fat_100g'),
+      polyunsaturatedFat100g: pickPer100gNumber(nutriments, 'polyunsaturated-fat_100g'),
+      omega3100g: pickPer100gNumber(nutriments, 'omega-3-fat_100g'),
+      omega6100g: pickPer100gNumber(nutriments, 'omega-6-fat_100g'),
+      transFat100g: pickPer100gNumber(nutriments, 'trans-fat_100g')
     },
     source: 'Open Food Facts',
     fetchedAt: Date.now()
