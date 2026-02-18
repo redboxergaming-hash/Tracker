@@ -206,6 +206,28 @@ button.secondary {
   color: var(--text);
 }
 
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+button {
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--color-primary-500), var(--color-primary-600));
+  border-color: var(--color-primary-700);
+  color: #f8fafc;
+}
+
+button.secondary {
+  background: var(--surface-soft);
+  border-color: var(--border);
+  color: var(--text);
+}
+
 button.danger {
   background: var(--danger-bg);
   border-color: var(--danger-border);

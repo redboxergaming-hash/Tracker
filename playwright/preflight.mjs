@@ -27,6 +27,20 @@ async function canLaunch(name, browserType, options) {
   const browser = await browserType.launch(options);
   const page = await browser.newPage();
   await page.goto('about:blank');
+import { chromiumLaunchOptions } from './config.mjs';
+
+function looksLikeMissingPlaywright(error) {
+  const text = String(error?.stack || error?.message || error || '');
+  return error?.code === 'ERR_MODULE_NOT_FOUND' || /Cannot find package 'playwright'/i.test(text);
+}
+
+function looksLikeMissingBrowserBinary(error) {
+  const text = String(error?.stack || error?.message || error || '');
+  return /Executable doesn't exist|browserType\.launch: Executable|please run the following command to download new browsers|browser not found|failed to launch browser process/i.test(text);
+}
+
+async function canLaunch(name, browserType, options) {
+  const browser = await browserType.launch(options);
   await browser.close();
   return { name, ok: true };
 }
@@ -59,6 +73,7 @@ export async function playwrightPreflight() {
       playwrightVersion: packageVersion || 'unknown',
       webkitDevice: WEBKIT_IOS_DEVICE.viewport
     };
+    return { ok: true, reason: 'ready' };
   } catch (error) {
     if (looksLikeMissingBrowserBinary(error)) {
       return {
@@ -84,4 +99,7 @@ export function installProcessDiagnostics(logger = console) {
   const log = (label, err) => logger.error(`[process:${label}]`, textOf(err));
   process.on('unhandledRejection', (err) => log('unhandledRejection', err));
   process.on('uncaughtException', (err) => log('uncaughtException', err));
+}
+    throw error;
+  }
 }

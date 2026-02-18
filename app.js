@@ -55,6 +55,7 @@ import {
   setNutritionDefaultDate,
   renderNutritionOverview,
   setAddMode
+  renderNutritionOverview
 } from './ui.js';
 
 const CHATGPT_PHOTO_PROMPT = `Look at this meal photo. List the foods you can clearly identify.
@@ -160,6 +161,7 @@ const state = {
   selectedGenericCategory: 'All',
   dashboardMacroView: 'consumed',
   addMode: 'search'
+  dashboardMacroView: 'consumed'
 };
 
 function foodFromGeneric(item) {
@@ -909,6 +911,15 @@ function wireEvents() {
     const btn = e.target.closest('button[data-category]');
     if (!btn) return;
     state.selectedGenericCategory = btn.dataset.category || 'All';
+    const personId = document.getElementById('addPersonPicker').value || state.selectedPersonId;
+    if (!personId) return;
+    filterSuggestions(document.getElementById('foodSearchInput').value || '', personId);
+    document.querySelectorAll('#genericCategoryFilters button[data-category]').forEach((b) => {
+      b.classList.toggle('active', b === btn);
+    });
+  });
+
+  document.getElementById('foodSearchInput').addEventListener('input', (e) => {
     const personId = document.getElementById('addPersonPicker').value || state.selectedPersonId;
     if (!personId) return;
     filterSuggestions(document.getElementById('foodSearchInput').value || '', personId);
